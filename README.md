@@ -123,7 +123,9 @@ SECRET_KEY="replace-with-a-random-secret"
 DATABASE_URL="sqlite:///taskflow.db"
 
 # Optional: enables Admin → AI Planning
-OPENROUTER_API_KEY="replace-with-your-openrouter-key"
+GROQ_API_KEY="replace-with-your-groq-key"
+# Optional: pick a fast model (default: llama3-8b-8192)
+GROQ_MODEL="llama3-8b-8192"
 ```
 
 Generate a secure secret key:
