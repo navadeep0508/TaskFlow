@@ -3,10 +3,12 @@
   <p><b>Role-based task & project management for teams — built with Flask + Bootstrap.</b></p>
 
   <p>
+    <a href="https://taskflow-3p0i.onrender.com" target="_blank"><img alt="Live Demo" src="https://img.shields.io/badge/Live-Demo-009639?logo=render&logoColor=white"></a>
     <a href="#"><img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white"></a>
     <a href="#"><img alt="Flask" src="https://img.shields.io/badge/Flask-3.x-000000?logo=flask&logoColor=white"></a>
     <a href="#"><img alt="SQLAlchemy" src="https://img.shields.io/badge/SQLAlchemy-2.x-D71F00?logo=sqlalchemy&logoColor=white"></a>
     <a href="#"><img alt="Bootstrap" src="https://img.shields.io/badge/Bootstrap-5-7952B3?logo=bootstrap&logoColor=white"></a>
+    <a href="#"><img alt="AI" src="https://img.shields.io/badge/AI-Powered-FF6F00?logo=openai&logoColor=white"></a>
     <a href="#"><img alt="Tests" src="https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white"></a>
   </p>
 </div>
@@ -245,6 +247,62 @@ Minimum production env vars:
 
 - `SECRET_KEY` (required)
 - `DATABASE_URL` (recommended; defaults to local SQLite if not provided)
+- `OPENROUTER_API_KEY` (optional, for AI planning feature)
+
+### Deploy to Render
+
+TaskFlow is configured for easy deployment on Render using the included `render.yaml` file.
+
+**Prerequisites:**
+- A Render account (free tier available)
+- GitHub repository with your TaskFlow code
+
+**Steps:**
+
+1. **Push your code to GitHub** (if not already done)
+   ```bash
+   git add .
+   git commit -m "Ready for Render deployment"
+   git push origin main
+   ```
+
+2. **Create a new Web Service on Render:**
+   - Go to [dashboard.render.com](https://dashboard.render.com)
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+   - Render will automatically detect the `render.yaml` configuration
+
+3. **Configure Environment Variables:**
+   - `SECRET_KEY`: Render will auto-generate this (configured in render.yaml)
+   - `DATABASE_URL`: Render will auto-connect to the PostgreSQL database (configured in render.yaml)
+   - `OPENROUTER_API_KEY`: Add this manually if you want to use AI planning features
+
+4. **Deploy:**
+   - Click "Create Web Service"
+   - Render will automatically:
+     - Install dependencies from `requirements.txt`
+     - Run database migrations (`alembic upgrade head`)
+     - Start the application with Gunicorn
+
+5. **Access your app:**
+   - Once deployed, Render will provide a URL like `https://taskflow.onrender.com`
+   - Log in with the default admin credentials (change these in production!)
+     - Email: `admin@taskflow.com`
+     - Password: `admin123`
+
+**Note:** The `render.yaml` file creates a PostgreSQL database automatically. If you prefer to use your own database, you can modify the configuration and provide the `DATABASE_URL` manually.
+
+### Manual Deployment (Alternative)
+
+If you prefer manual configuration without `render.yaml`:
+
+1. Create a Web Service on Render
+2. Set these environment variables manually:
+   - `SECRET_KEY`: Generate a secure random key
+   - `DATABASE_URL`: Your PostgreSQL connection string
+   - `OPENROUTER_API_KEY`: (optional) Your OpenRouter API key
+3. Build command: `pip install -r requirements.txt && alembic upgrade head`
+4. Start command: `gunicorn app:app`
 
 ## Troubleshooting
 

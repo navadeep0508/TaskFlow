@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: taskflow
+    env: python
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskflow-db
+          property: connectionString
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+databases:
+  - name: taskflow-db
+    databaseName: taskflow
+    user: taskflow

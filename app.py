@@ -87,7 +87,10 @@ def _ensure_role_permissions() -> None:
 
 app.config['SQLALCHEMY_DATABASE_URI'] = _choose_database_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
+secret_key = os.getenv("SECRET_KEY")
+if not secret_key:
+    raise ValueError("SECRET_KEY environment variable is required. Please set it before running the application.")
+app.config['SECRET_KEY'] = secret_key
 
 db.init_app(app)
 
@@ -145,6 +148,8 @@ def inject_notification_count():
 
 
 with app.app_context():
+    # Create all tables if they don't exist
+    db.create_all()
     _ensure_admin_user()
     _ensure_role_permissions()
 
