@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TaskFlow{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <div id="sidebar">
+        <div class="sidebar-brand">
+            <span class="tf-brand-mark me-2"><i class="bi bi-stack"></i></span>
+            <span class="tf-brand-name">TaskFlow</span>
+        </div>
+        
+        <div class="sidebar-nav">
+            <div class="nav-label">Main Menu</div>
+            <a href="{{ url_for('dashboard') }}" class="sidebar-link {{ 'active' if request.endpoint == 'dashboard' else '' }}">
+                <i class="bi bi-grid"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('task.tasks') }}" class="sidebar-link {{ 'active' if 'task' in request.endpoint else '' }}">
+                <i class="bi bi-check2-square"></i>
+                <span>All Tasks</span>
+            </a>
+            
+            <div class="nav-label mt-4">Workspaces</div>
+            {% if current_user.role.value == 'admin' %}
+            <a href="{{ url_for('project.projects') }}" class="sidebar-link {{ 'active' if 'project' in request.endpoint else '' }}">
+                <i class="bi bi-folder"></i>
+                <span>Projects</span>
+            </a>
+            {% endif %}
+            
+            <div class="nav-label mt-4">System</div>
+            <a href="{{ url_for('notification.list_notifications') }}" class="sidebar-link {{ 'active' if 'notification' in request.endpoint else '' }}">
+                <i class="bi bi-bell"></i>
+                <span>Notifications</span>
+                {% if unread_notifications_count %}
+                <span class="badge badge-soft-danger ms-auto">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
+            {% if current_user.role.value == 'admin' %}
+            <a href="{{ url_for('ai_planning.planning_index') }}" class="sidebar-link {{ 'active' if 'ai_planning' in request.endpoint else '' }}">
+                <i class="bi bi-magic"></i>
+                <span>AI Planner</span>
+            </a>
+            <a href="{{ url_for('admin.permissions') }}" class="sidebar-link {{ 'active' if 'admin' in request.endpoint else '' }}">
+                <i class="bi bi-shield-check"></i>
+                <span>Governance</span>
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="position-absolute bottom-0 w-100 p-4 border-top">
+            <div class="d-flex align-items-center">
+                <div class="avatar-initials me-3">
+                    {{ current_user.name[:1].upper() }}
+                </div>
+                <div class="flex-grow-1 text-truncate">
+                    <div class="fw-semibold text-dark">{{ current_user.name }}</div>
+                    <div class="text-muted small">{{ current_user.role.value | capitalize }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="main-content">
+        <header id="top-nav">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="tf-icon-btn d-lg-none" id="sidebar-toggle" aria-label="Open navigation">
+                <i class="bi bi-list"></i>
+                </button>
+                <button type="button" class="tf-icon-btn d-none d-lg-inline-flex" id="sidebar-collapse" aria-label="Collapse navigation">
+                    <i class="bi bi-layout-sidebar-inset"></i>
+                </button>
+            </div>
+
+            <div class="d-none d-md-flex align-items-center flex-grow-1">
+                <div class="input-group input-group-sm tf-search">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search tasks, projects, people...">
+                </div>
+            </div>
+
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <div class="dropdown">
+                    <button class="tf-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Create">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2">
+                        <li><a class="dropdown-item rounded-3 py-2" href="{{ url_for('task.tasks') }}"><i class="bi bi-check2-circle me-2"></i>New Task</a></li>
+                        {% if current_user.role.value == 'admin' %}
+                        <li><a class="dropdown-item rounded-3 py-2" href="{{ url_for('project.projects') }}"><i class="bi bi-folder-plus me-2"></i>New Project</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-dark text-decoration-none" data-bs-toggle="dropdown">
+                        <div class="avatar-initials tf-avatar-ring">
+                            {{ current_user.name[:1].upper() }}
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="min-width: 200px;">
+                        <li class="px-3 py-2 mb-2">
+                            <div class="fw-bold">{{ current_user.name }}</div>
+                            <div class="text-muted small">{{ current_user.email }}</div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item rounded-3 py-2" href="#"><i class="bi bi-person me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item rounded-3 py-2 text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <main id="content-wrapper">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        {% set alert_class = 'success' %}
+                        {% if category == 'error' or category == 'danger' %}
+                            {% set alert_class = 'danger' %}
+                        {% elif category == 'warning' %}
+                            {% set alert_class = 'warning' %}
+                        {% elif category == 'info' %}
+                            {% set alert_class = 'info' %}
+                        {% endif %}
+                        <div class="alert alert-{{ alert_class }} alert-dismissible fade show border-0 shadow-sm mb-4 rounded-4 px-4 py-3" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-info-circle-fill me-3 fs-5"></i>
+                                <div>{{ message }}</div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="fade-in">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    {% else %}
+    <main class="auth-wrapper min-vh-100 d-flex align-items-center justify-content-center bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-stack fs-1 text-primary"></i>
+                        <h2 class="fw-bold mt-2">TaskFlow</h2>
+                    </div>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show border-0 shadow-sm mb-4 rounded-4" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    {% block guest_content %}{% endblock %}
+                    {% block auth_content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </main>
+    {% endif %}
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        document.getElementById('sidebar-toggle')?.addEventListener('click', function() {
+            sidebar?.classList.add('show');
+            overlay?.classList.add('show');
+        });
+        overlay?.addEventListener('click', function() {
+            sidebar?.classList.remove('show');
+            overlay?.classList.remove('show');
+        });
+
+        const applySidebarPref = () => {
+            const pref = localStorage.getItem('tf_sidebar') || 'expanded';
+            document.body.classList.toggle('sidebar-collapsed', pref === 'collapsed');
+        };
+        applySidebarPref();
+        document.getElementById('sidebar-collapse')?.addEventListener('click', function() {
+            const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('tf_sidebar', isCollapsed ? 'collapsed' : 'expanded');
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

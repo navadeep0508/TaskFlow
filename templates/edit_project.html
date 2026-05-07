@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Project - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item small"><a href="{{ url_for('project.projects') }}" class="text-decoration-none">Portfolio</a></li>
+                <li class="breadcrumb-item small active">Edit Project</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-1">Modify Project</h1>
+        <p class="text-muted mb-0">Update the core attributes and mission description of this workspace.</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-xl-6 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white border-bottom p-4">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary-light text-primary rounded-circle p-2 me-3" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-folder-check fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Project Configuration</h5>
+                        <span class="text-muted small">ID: #PROJ-{{ project.id }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form action="{{ url_for('project.edit_project', project_id=project.id) }}" method="POST">
+                    <div class="form-floating mb-4">
+                        <input type="text" class="form-control bg-light border-0" id="title" name="title" value="{{ project.title }}" required placeholder="Project Title">
+                        <label for="title">Project Identity / Title</label>
+                    </div>
+                    
+                    <div class="form-floating mb-4">
+                        <textarea class="form-control bg-light border-0" id="description" name="description" style="height: 180px" placeholder="Description">{{ project.description }}</textarea>
+                        <label for="description">Project Narrative & Goals</label>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between mt-5 border-top pt-4">
+                        <a href="{{ url_for('project.projects') }}" class="btn btn-link text-decoration-none text-muted p-0">
+                            <i class="bi bi-arrow-left me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                            <i class="bi bi-check2-circle me-2"></i>Update Project
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="alert badge-soft-warning border-0 p-4 rounded-4 shadow-sm">
+            <div class="d-flex">
+                <i class="bi bi-shield-exclamation fs-3 me-3"></i>
+                <div>
+                    <h6 class="fw-bold mb-1">Administrative Consideration</h6>
+                    <p class="small mb-0 opacity-75">
+                        Changes to the project title or description will be visible to all members assigned to associated tasks. Ensure clarity in your updates.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "public_layout.html" %}
+
+{% block title %}TaskFlow{% endblock %}
+
+{% block content %}
+<main class="tf-splash d-flex align-items-center justify-content-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+                <div class="tf-splash-card text-center">
+                    <div class="tf-brand d-inline-flex align-items-center justify-content-center mb-3">
+                        <i class="bi bi-stack"></i>
+                    </div>
+                    <h1 class="tf-splash-title mb-2">TaskFlow</h1>
+                    <p class="tf-splash-tagline mb-4">
+                        Manage projects, assign tasks, and track team progress efficiently.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-center gap-3">
+                        <div class="spinner-border text-primary" role="status" aria-label="Loading"></div>
+                        <span class="text-muted fw-medium">Loading workspace</span>
+                    </div>
+                </div>
+                <div class="text-center mt-4 small text-muted">
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check"></i>
+                        Secure and reliable project operations
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        const redirectUrl = "{{ url_for('landing') }}";
+        const exitAfterMs = 2000;
+        const navigateAfterMs = 2500;
+        window.setTimeout(() => {
+            document.querySelector('.tf-splash')?.classList.add('tf-splash-exit');
+        }, exitAfterMs);
+        window.setTimeout(() => {
+            window.location.replace(redirectUrl);
+        }, navigateAfterMs);
+    })();
+</script>
+{% endblock %}

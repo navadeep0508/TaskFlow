@@ -1,0 +1,452 @@
+{% extends "layout.html" %}
+
+{% block title %}Tasks - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+    <div class="col-12 d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Task Operations</h1>
+            <p class="text-muted mb-0">Track, manage, and transition tasks across your active projects.</p>
+        </div>
+        {% if current_user.role.value == 'admin' %}
+        <div class="mt-3 mt-md-0">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                <i class="bi bi-plus-lg me-2"></i> New Task
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="GET" action="{{ url_for('task.tasks') }}" class="row g-3 align-items-end">
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small fw-semibold text-muted">Search Query</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+                    <input class="form-control bg-light border-0" name="q" placeholder="Keywords..." value="{{ active_filters.q }}">
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-3">
+                <label class="form-label small fw-semibold text-muted">Status</label>
+                <select class="form-select bg-light border-0" name="status">
+                    <option value="">All Statuses</option>
+                    {% for status in TaskStatus %}
+                    <option value="{{ status.value }}" {{ 'selected' if active_filters.status == status.value else '' }}>{{ status.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-3">
+                <label class="form-label small fw-semibold text-muted">Project</label>
+                <select class="form-select bg-light border-0" name="project_id">
+                    <option value="">All Projects</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {{ 'selected' if active_filters.project_id == project.id|string else '' }}>{{ project.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small fw-semibold text-muted">Assignee</label>
+                <select class="form-select bg-light border-0" name="assignee_id">
+                    <option value="">All Assignees</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {{ 'selected' if active_filters.assignee_id == user.id|string else '' }}>{{ user.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-6 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">Apply Filters</button>
+                <a href="{{ url_for('task.tasks') }}" class="btn btn-light border" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <div class="badge badge-soft-primary"><i class="bi bi-view-list me-2"></i>Views</div>
+        <ul class="nav nav-pills" id="taskViewTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active tf-pill" id="list-tab" data-bs-toggle="pill" data-bs-target="#list-view" type="button" role="tab">List</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link tf-pill" id="board-tab" data-bs-toggle="pill" data-bs-target="#board-view" type="button" role="tab">Board</button>
+            </li>
+        </ul>
+    </div>
+    <div class="text-muted small d-none d-md-block">
+        <i class="bi bi-info-circle me-1"></i>Tip: Drag & drop is coming — for now, update status with the chips.
+    </div>
+</div>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="list-view" role="tabpanel" aria-labelledby="list-tab">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Task</th>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Due</th>
+                            <th>Assignee</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr class="{{ 'bg-danger-light' if task.is_overdue else '' }}">
+                            <td class="ps-4">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold text-dark mb-0">{{ task.title }}</span>
+                                    <span class="text-muted small text-truncate" style="max-width: 260px;">{{ task.description or 'No description' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-soft-primary">{{ task.project.title }}</span>
+                            </td>
+                            <td>
+                                <form action="{{ url_for('task.update_task_status', task_id=task.id) }}" method="POST">
+                                    {% set status_class = 'badge-soft-success' if task.status.value == 'Completed' 
+                                                    else ('badge-soft-warning' if task.status.value == 'In Progress'
+                                                    else ('badge-soft-danger' if task.status.value == 'Blocked'
+                                                    else 'badge-soft-primary')) %}
+                                    <select name="status" class="form-select form-select-sm border-0 tf-status-select {{ status_class }}" onchange="this.form.submit()" style="width: auto; cursor: pointer;">
+                                        {% for status in TaskStatus %}
+                                        <option value="{{ status.value }}" {{ 'selected' if task.status == status else '' }}>{{ status.value }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </td>
+                            <td>
+                                {% set p_color = 'success' if task.priority.value == 'Low' 
+                                          else ('warning' if task.priority.value == 'Medium' 
+                                          else ('danger' if task.priority.value == 'High' 
+                                          else 'dark')) %}
+                                <div class="d-flex align-items-center">
+                                    <div class="tf-priority-dot bg-{{ p_color }} me-2"></div>
+                                    <span class="small fw-semibold text-{{ p_color }}">{{ task.priority.value }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="small {{ 'text-danger fw-bold' if task.is_overdue else 'text-dark fw-medium' }}">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        {{ task.due_date.strftime('%b %d') if task.due_date else 'TBD' }}
+                                    </span>
+                                    {% if task.is_overdue %}
+                                    <span class="x-small text-danger">Overdue</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if task.assignee %}
+                                <div class="d-flex align-items-center" title="{{ task.assignee.name }}">
+                                    <div class="avatar-initials sm me-2">
+                                        {{ task.assignee.name[:1].upper() }}
+                                    </div>
+                                    <span class="small text-muted">{{ task.assignee.name.split(' ')[0] }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small italic">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <button class="btn btn-light btn-sm rounded-3" data-bs-toggle="modal" data-bs-target="#collabModal{{ task.id }}" title="Collaboration">
+                                        <i class="bi bi-chat-dots"></i>
+                                    </button>
+                                    {% if current_user.role.value == 'admin' %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm rounded-3" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2">
+                                            <li><a class="dropdown-item rounded-3" href="{{ url_for('task.edit_task', task_id=task.id) }}"><i class="bi bi-pencil me-2"></i>Edit Task</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><button class="dropdown-item rounded-3 text-danger" data-bs-toggle="modal" data-bs-target="#deleteTaskModal{{ task.id }}"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="modal fade" id="collabModal{{ task.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                            <div class="modal-header bg-white border-bottom p-4">
+                                                <h5 class="modal-title fw-bold">Collaboration Space</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <div class="mb-4">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase mb-3">Add a Comment</label>
+                                                    <form action="{{ url_for('task.comment_task', task_id=task.id) }}" method="POST">
+                                                        <textarea name="body" class="form-control bg-light border-0 mb-2" rows="3" placeholder="Type your update here..." required></textarea>
+                                                        <div class="text-end">
+                                                            <button class="btn btn-primary btn-sm px-4 tf-pill">Post Update</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                
+                                                <div class="d-flex gap-2 mb-4">
+                                                    <form action="{{ url_for('task.watch_task', task_id=task.id) }}" method="POST" class="flex-grow-1">
+                                                        <button class="btn btn-light border w-100 btn-sm tf-pill"><i class="bi bi-eye me-2"></i>Follow Task</button>
+                                                    </form>
+                                                    {% if current_user.role.value == 'admin' %}
+                                                    <button class="btn btn-light border w-100 btn-sm tf-pill" onclick="toggleDependencyForm('{{ task.id }}')"><i class="bi bi-link-45deg me-2"></i>Blocker</button>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div id="dependencyForm{{ task.id }}" class="mb-4 d-none">
+                                                    <form action="{{ url_for('task.add_dependency', task_id=task.id) }}" method="POST">
+                                                        <div class="input-group input-group-sm">
+                                                            <select name="depends_on_id" class="form-select bg-light border-0">
+                                                                <option value="">Select task...</option>
+                                                                {% for candidate in tasks if candidate.id != task.id %}
+                                                                <option value="{{ candidate.id }}">#{{ candidate.id }} {{ candidate.title }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                            <button class="btn btn-danger tf-pill">Mark Blocked</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+
+                                                <div class="border-top pt-3">
+                                                    <label class="form-label small fw-bold text-muted text-uppercase mb-3">Recent Activity</label>
+                                                    <div class="activity-timeline">
+                                                        {% for comment in task.comments[-3:] %}
+                                                        <div class="d-flex mb-3">
+                                                            <div class="avatar-initials sm me-2">
+                                                                {{ comment.author.name[:1].upper() if comment.author else '?' }}
+                                                            </div>
+                                                            <div class="bg-light rounded-3 p-3 flex-grow-1">
+                                                                <div class="d-flex justify-content-between mb-1">
+                                                                    <span class="fw-bold small">{{ comment.author.name if comment.author else 'System' }}</span>
+                                                                    <span class="text-muted x-small">{{ comment.created_at.strftime('%H:%M') }}</span>
+                                                                </div>
+                                                                <div class="small text-dark">{{ comment.body }}</div>
+                                                            </div>
+                                                        </div>
+                                                        {% else %}
+                                                        <div class="text-center py-3 text-muted small">No activity recorded yet.</div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal fade" id="deleteTaskModal{{ task.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                            <div class="modal-body p-5 text-center">
+                                                <div class="bg-danger-light text-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                                                    <i class="bi bi-trash3 fs-1"></i>
+                                                </div>
+                                                <h4 class="fw-bold mb-2">Delete Task?</h4>
+                                                <p class="text-muted mb-4">Are you sure you want to delete <strong>"{{ task.title }}"</strong>? This action is permanent.</p>
+                                                <div class="d-flex gap-2 justify-content-center">
+                                                    <button type="button" class="btn btn-light px-4 tf-pill" data-bs-dismiss="modal">Cancel</button>
+                                                    <form action="{{ url_for('task.delete_task', task_id=task.id) }}" method="POST">
+                                                        <button type="submit" class="btn btn-danger px-4 tf-pill">Delete Task</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="py-4 px-3">
+                                    <div class="tf-empty p-5">
+                                        <i class="bi bi-check2-circle display-6 text-primary mb-3 d-block"></i>
+                                        <h5 class="fw-bold mb-1">All caught up</h5>
+                                        <p class="text-muted mb-3">No tasks match your current filters.</p>
+                                        <a href="{{ url_for('task.tasks') }}" class="btn btn-light btn-sm border tf-pill px-3">Clear filters</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="board-view" role="tabpanel" aria-labelledby="board-tab">
+        <div class="tf-board">
+            {% for status in TaskStatus %}
+            {% set col_tasks = tasks|selectattr('status', 'equalto', status)|list %}
+            <div class="tf-column">
+                <div class="tf-column-header">
+                    <div class="tf-column-title">{{ status.value }}</div>
+                    <span class="badge badge-soft-dark">{{ col_tasks|length }}</span>
+                </div>
+                <div class="d-flex flex-column gap-3">
+                    {% for task in col_tasks %}
+                    {% set p_color = 'success' if task.priority.value == 'Low' 
+                              else ('warning' if task.priority.value == 'Medium' 
+                              else ('danger' if task.priority.value == 'High' 
+                              else 'dark')) %}
+                    <div class="tf-task-card">
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <div class="tf-priority-dot bg-{{ p_color }}"></div>
+                                    <h6 class="tf-task-title">{{ task.title }}</h6>
+                                </div>
+                                <div class="tf-task-desc text-truncate" style="max-width: 240px;">
+                                    {{ task.description or 'No description' }}
+                                </div>
+                            </div>
+                            <button class="btn btn-light btn-sm rounded-3" data-bs-toggle="modal" data-bs-target="#collabModal{{ task.id }}" title="Collaboration">
+                                <i class="bi bi-chat-dots"></i>
+                            </button>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                            <span class="badge badge-soft-primary">{{ task.project.title }}</span>
+                            {% if task.due_date %}
+                            <span class="badge {{ 'badge-soft-danger' if task.is_overdue else 'badge-soft-dark' }}">
+                                <i class="bi bi-calendar3 me-1"></i>{{ task.due_date.strftime('%b %d') }}
+                            </span>
+                            {% else %}
+                            <span class="badge badge-soft-dark"><i class="bi bi-calendar3 me-1"></i>TBD</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                {% if task.assignee %}
+                                <div class="avatar-initials sm">{{ task.assignee.name[:1].upper() }}</div>
+                                <div class="text-muted small">{{ task.assignee.name.split(' ')[0] }}</div>
+                                {% else %}
+                                <div class="text-muted small italic">Unassigned</div>
+                                {% endif %}
+                            </div>
+                            <form action="{{ url_for('task.update_task_status', task_id=task.id) }}" method="POST">
+                                {% set status_class = 'badge-soft-success' if task.status.value == 'Completed' 
+                                                else ('badge-soft-warning' if task.status.value == 'In Progress'
+                                                else ('badge-soft-danger' if task.status.value == 'Blocked'
+                                                else 'badge-soft-primary')) %}
+                                <select name="status" class="form-select form-select-sm border-0 tf-status-select {{ status_class }}" onchange="this.form.submit()" style="width: auto; cursor: pointer;">
+                                    {% for s in TaskStatus %}
+                                    <option value="{{ s.value }}" {{ 'selected' if task.status == s else '' }}>{{ s.value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="tf-empty p-4 text-center text-muted small">
+                        Nothing here yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Create Task Modal -->
+<div class="modal fade" id="createTaskModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-white border-bottom p-4">
+                <h5 class="modal-title fw-bold">Initiate New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('task.create_task') }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="form-floating">
+                                <input type="text" class="form-control bg-light border-0" id="taskTitle" name="title" required placeholder="Title">
+                                <label for="taskTitle">Task Title</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select name="project_id" class="form-select bg-light border-0" id="taskProject" required>
+                                    <option value="" disabled selected>Choose Project</option>
+                                    {% for project in projects %}
+                                    <option value="{{ project.id }}">{{ project.title }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label for="taskProject">Project Context</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control bg-light border-0" name="description" id="taskDesc" style="height: 100px" placeholder="Details"></textarea>
+                                <label for="taskDesc">Description & Requirements</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select name="priority" class="form-select bg-light border-0" id="taskPriority">
+                                    {% for priority in TaskPriority %}
+                                    <option value="{{ priority.value }}" {{ 'selected' if priority.value == 'Medium' else '' }}>{{ priority.value }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label for="taskPriority">Priority Level</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <input type="date" class="form-control bg-light border-0" id="taskDue" name="due_date">
+                                <label for="taskDue">Due Date</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select name="assigned_to" class="form-select bg-light border-0" id="taskAssign">
+                                    <option value="None">Unassigned</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label for="taskAssign">Team Member</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control bg-light border-0" id="taskEst" name="estimate_hours" min="0" step="0.5" placeholder="6">
+                                <label for="taskEst">Estimated Hours</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control bg-light border-0" id="taskSP" name="story_points" min="0" step="1" placeholder="3">
+                                <label for="taskSP">Story Points</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDependencyForm(taskId) {
+    const form = document.getElementById('dependencyForm' + taskId);
+    form.classList.toggle('d-none');
+}
+</script>
+{% endblock %}

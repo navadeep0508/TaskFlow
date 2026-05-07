@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block title %}Login - TaskFlow{% endblock %}
+
+{% block guest_content %}
+<div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+    <div class="card-body p-5">
+        <h3 class="fw-bold mb-1">Welcome back</h3>
+        <p class="text-muted mb-4">Enter your credentials to access your workspace.</p>
+        
+        <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control bg-light border-0" id="email" name="email" placeholder="name@example.com" required>
+                <label for="email">Email address</label>
+                <div class="invalid-feedback px-2">Please provide a valid email.</div>
+            </div>
+            
+            <div class="form-floating mb-4">
+                <input type="password" class="form-control bg-light border-0" id="password" name="password" placeholder="Password" required>
+                <label for="password">Password</label>
+                <div class="invalid-feedback px-2">Password is required.</div>
+            </div>
+            
+            <div class="d-flex align-items-center justify-content-between mb-4 px-1">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="remember">
+                    <label class="form-check-label text-muted small" for="remember">Remember me</label>
+                </div>
+                <a href="#" class="text-primary small text-decoration-none fw-medium">Forgot password?</a>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 btn-lg rounded-3 shadow-sm mb-4">
+                Sign in to TaskFlow
+            </button>
+            
+            <div class="text-center">
+                <p class="text-muted small mb-0">
+                    Don't have an account? 
+                    <a href="{{ url_for('auth.register') }}" class="text-primary text-decoration-none fw-bold">Create account</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    }, false);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+
+{% block title %}Notifications - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <h1 class="h3 fw-bold mb-1">Notifications</h1>
+        <p class="text-muted mb-0">Stay updated with task assignments and project changes.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="list-group list-group-flush">
+                {% for item in notifications %}
+                <div class="list-group-item p-4 {{ 'bg-light border-start border-4 border-primary' if not item.is_read else '' }}">
+                    <div class="d-flex align-items-start">
+                        <div class="bg-primary-light text-primary rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi {{ 'bi-bell-fill' if not item.is_read else 'bi-bell' }} fs-5"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold mb-0 {{ 'text-primary' if not item.is_read else 'text-dark' }}">{{ item.title }}</h6>
+                                <span class="text-muted x-small" style="font-size: 11px;">{{ item.created_at.strftime('%b %d, %H:%M') }}</span>
+                            </div>
+                            <div class="text-muted small mb-3">{{ item.message }}</div>
+                            
+                            {% if not item.is_read %}
+                            <form action="{{ url_for('notification.mark_notification_read', notification_id=item.id) }}" method="POST">
+                                <button class="btn btn-primary btn-sm rounded-3 px-3" style="font-size: 11px;">
+                                    <i class="bi bi-check2 me-1"></i> Mark as Read
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="badge badge-soft-success px-3" style="font-size: 10px;">Already Read</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-bell-slash fs-1 text-muted"></i>
+                    </div>
+                    <h5 class="fw-bold">No notifications</h5>
+                    <p class="text-muted">We'll notify you when something important happens.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">Notification Settings</h6>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="emailNotif" checked disabled>
+                    <label class="form-check-label small fw-medium" for="emailNotif">Email Notifications</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="browserNotif" checked disabled>
+                    <label class="form-check-label small fw-medium" for="browserNotif">Browser Alerts</label>
+                </div>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="assignNotif" checked disabled>
+                    <label class="form-check-label small fw-medium" for="assignNotif">Task Assignments</label>
+                </div>
+                <hr>
+                <button class="btn btn-light w-100 btn-sm text-muted" disabled>Advanced Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

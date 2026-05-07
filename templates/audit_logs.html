@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block title %}Audit Logs - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12 d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Audit Logs</h1>
+            <p class="text-muted mb-0">Platform activity tracking and historical operations record.</p>
+        </div>
+        <a href="{{ url_for('admin.permissions') }}" class="btn btn-white border shadow-sm btn-sm">
+            <i class="bi bi-arrow-left me-2"></i> Back to Governance
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Platform Activity</h6>
+                <div class="badge badge-soft-primary">{{ logs|length }} Total Logs</div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Timestamp</th>
+                            <th>Actor Identity</th>
+                            <th>Target Entity</th>
+                            <th>Operation</th>
+                            <th class="pe-4">Trace Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="small fw-medium text-dark">{{ log.created_at.strftime('%b %d, %Y') }}</div>
+                                <div class="text-muted x-small" style="font-size: 10px;">{{ log.created_at.strftime('%H:%M:%S') }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light text-muted rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px; font-size: 11px;">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    <span class="small fw-medium">ID #{{ log.actor_id or '0' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-soft-info">{{ log.entity_type }}</span>
+                                <span class="text-muted small">#{{ log.entity_id or '-' }}</span>
+                            </td>
+                            <td>
+                                <code class="bg-light text-primary px-2 py-1 rounded small">{{ log.action }}</code>
+                            </td>
+                            <td class="pe-4">
+                                <div class="small text-muted text-truncate" style="max-width: 300px;" title="{{ log.details }}">
+                                    {{ log.details or 'No additional metadata' }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="py-4">
+                                    <i class="bi bi-journal-x fs-1 text-light mb-3 d-block"></i>
+                                    <p class="text-muted mb-0">The audit log is currently empty.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

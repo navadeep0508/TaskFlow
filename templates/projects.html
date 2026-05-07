@@ -1,0 +1,158 @@
+{% extends "layout.html" %}
+
+{% block title %}Projects - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+    <div class="col-12 d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Project Portfolio</h1>
+            <p class="text-muted mb-0">Organize your work and collaborate with your team across different initiatives.</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+                <i class="bi bi-plus-lg me-2"></i> Create New Project
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                <h5 class="mb-0 fw-bold">Active Projects</h5>
+                <div class="input-group input-group-sm w-auto">
+                    <input type="text" class="form-control" placeholder="Filter projects...">
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Project Identity</th>
+                                <th>Description</th>
+                                <th>Team Lead</th>
+                                <th>Timeline</th>
+                                <th class="text-end pe-4">Operations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary-light text-primary rounded-3 p-2 me-3">
+                                            <i class="bi bi-folder2 fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <a href="{{ url_for('project.view_project', project_id=project.id) }}" class="fw-bold text-dark text-decoration-none hover-primary">
+                                                {{ project.title }}
+                                            </a>
+                                            <div class="text-muted small">ID: #PROJ-{{ project.id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-muted small text-truncate" style="max-width: 250px;">
+                                        {{ project.description or 'No description provided' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-initials sm me-2" style="width: 24px; height: 24px; font-size: 10px;">
+                                            {{ project.creator.name[:1].upper() }}
+                                        </div>
+                                        <span class="small fw-medium">{{ project.creator.name }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small fw-medium">{{ project.created_at.strftime('%b %d, %Y') }}</div>
+                                    <div class="text-muted x-small" style="font-size: 10px;">Created Date</div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm rounded-3" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2">
+                                            <li><a class="dropdown-item rounded-3" href="{{ url_for('project.view_project', project_id=project.id) }}"><i class="bi bi-eye me-2"></i>View Details</a></li>
+                                            <li><a class="dropdown-item rounded-3" href="{{ url_for('project.edit_project', project_id=project.id) }}"><i class="bi bi-pencil me-2"></i>Edit Profile</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><button class="dropdown-item rounded-3 text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ project.id }}"><i class="bi bi-trash me-2"></i>Delete Project</button></li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Delete Confirmation Modal -->
+                                    <div class="modal fade" id="deleteModal{{ project.id }}" tabindex="-1">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                                <div class="modal-body p-5 text-center">
+                                                    <div class="bg-danger-light text-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                                                        <i class="bi bi-exclamation-triangle fs-1"></i>
+                                                    </div>
+                                                    <h4 class="fw-bold mb-2">Delete Project?</h4>
+                                                    <p class="text-muted mb-4">Are you sure you want to delete <strong>"{{ project.title }}"</strong>? This will permanently remove all associated tasks and data.</p>
+                                                    <div class="d-flex gap-2 justify-content-center">
+                                                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Keep Project</button>
+                                                        <form action="{{ url_for('project.delete_project', project_id=project.id) }}" method="POST">
+                                                            <button type="submit" class="btn btn-danger px-4">Yes, Delete</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <div class="py-4">
+                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                                            <i class="bi bi-folder-x fs-1 text-muted"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-dark">No projects yet</h5>
+                                        <p class="text-muted mb-4">Get started by creating your first workspace.</p>
+                                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createProjectModal">Create Project</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-white border-bottom p-4">
+                <h5 class="modal-title fw-bold">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('project.create_project') }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control bg-light border-0" id="title" name="title" required placeholder="Project Title">
+                        <label for="title">Project Title</label>
+                    </div>
+                    <div class="form-floating">
+                        <textarea class="form-control bg-light border-0" id="description" name="description" style="height: 120px" placeholder="Description"></textarea>
+                        <label for="description">Project Description</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

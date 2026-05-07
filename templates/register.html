@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block title %}Register - TaskFlow{% endblock %}
+
+{% block guest_content %}
+<div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+    <div class="card-body p-5">
+        <h3 class="fw-bold mb-1">Get Started</h3>
+        <p class="text-muted mb-4">Create your account and start managing projects like a pro.</p>
+
+        <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control bg-light border-0" id="name" name="name" placeholder="Full Name" required minlength="2">
+                <label for="name">Full Name</label>
+                <div class="invalid-feedback px-2">Name must be at least 2 characters.</div>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control bg-light border-0" id="email" name="email" placeholder="name@example.com" required>
+                <label for="email">Email Address</label>
+                <div class="invalid-feedback px-2">Please provide a valid email.</div>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="password" class="form-control bg-light border-0" id="password" name="password" placeholder="Password" required minlength="8">
+                        <label for="password">Password</label>
+                        <div class="invalid-feedback px-2">At least 8 chars.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="password" class="form-control bg-light border-0" id="confirm_password" name="confirm_password" placeholder="Confirm" required>
+                        <label for="confirm_password">Confirm</label>
+                        <div class="invalid-feedback px-2">Match required.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="skills" class="form-label small fw-bold text-muted text-uppercase px-1 mb-2">Professional Skills <span class="text-muted fw-normal">(optional)</span></label>
+                <div class="position-relative">
+                    <input type="text" class="form-control bg-light border-0 ps-4" id="skills" name="skills"
+                           placeholder="e.g. Python, UI Design, Project Management, SQL...">
+                    <i class="bi bi-stars position-absolute text-primary" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px;"></i>
+                </div>
+                <div class="form-text px-1">Separate with commas. The AI Planner uses this to assign tasks intelligently.</div>
+            </div>
+
+            <div class="form-check mb-4 px-4">
+                <input class="form-check-input" type="checkbox" id="terms" required>
+                <label class="form-check-label text-muted small" for="terms">
+                    I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-lg rounded-3 shadow-sm mb-4">
+                Create Workspace
+            </button>
+
+            <div class="text-center">
+                <p class="text-muted small mb-0">
+                    Already have an account?
+                    <a href="{{ url_for('auth.login') }}" class="text-primary text-decoration-none fw-bold">Sign in</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const skillsInput = document.getElementById('skills');
+
+    // Tag-style visual feedback for skills
+    skillsInput.addEventListener('blur', function() {
+        if (this.value.trim()) {
+            const count = this.value.split(',').filter(s => s.trim()).length;
+            this.parentElement.nextElementSibling.textContent = `${count} skill${count > 1 ? 's' : ''} added — the AI will use these for smart task assignments.`;
+        }
+    });
+
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    }, false);
+});
+</script>
+{% endblock %}

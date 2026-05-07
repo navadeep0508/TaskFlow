@@ -1,0 +1,259 @@
+{% extends "layout.html" %}
+
+{% block title %}AI Planner - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+    <div class="col-12 d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+        <div>
+            <h1 class="h3 fw-bold mb-1">AI-Powered Planning</h1>
+            <p class="text-muted mb-0">Automate your project roadmap using advanced Llama-3 intelligence.</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <span class="badge badge-soft-primary px-3 py-2"><i class="bi bi-cpu me-2"></i>Groq Llama-3 Active</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Configuration Column -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 tf-glass">
+            <div class="card-header bg-white p-4">
+                <h5 class="mb-0 fw-bold">Plan Configuration</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Target Project</label>
+                    <select id="projectSelect" class="form-select bg-light border-0">
+                        <option value="" disabled selected>Select a project...</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}">{{ project.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Strategic Deadline</label>
+                    <input type="date" id="deadlineInput" class="form-control bg-light border-0">
+                    <div class="form-text x-small">AI will ensure all tasks conclude by this date.</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-3">Participating Team</label>
+                    <div class="team-selection-list" style="max-height: 300px; overflow-y: auto;">
+                        {% for user in users %}
+                        <div class="form-check p-3 rounded-3 mb-2 border-0 bg-light-hover team-member-check">
+                            <input class="form-check-input ms-0 me-3" type="checkbox" value="{{ user.id }}" id="user{{ user.id }}" data-name="{{ user.name }}" data-skills="{{ user.skills or '' }}">
+                            <label class="form-check-label d-flex align-items-center cursor-pointer" for="user{{ user.id }}">
+                                <div class="avatar-initials sm me-2">{{ user.name[:1].upper() }}</div>
+                                <div>
+                                    <div class="fw-bold small">{{ user.name }}</div>
+                                    <div class="text-muted x-small text-truncate" style="max-width: 150px;">{{ user.skills or 'No skills listed' }}</div>
+                                </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button id="generateBtn" class="btn btn-primary w-100 py-3 shadow-sm mt-2 tf-pill">
+                    <i class="bi bi-stars me-2"></i> Generate AI Plan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Column -->
+    <div class="col-lg-8">
+        <div id="welcomeState" class="card border-0 shadow-sm h-100 tf-glass">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center py-5 text-center">
+                <div class="bg-primary-light text-primary rounded-circle p-4 mb-4" style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-robot fs-1"></i>
+                </div>
+                <h4 class="fw-bold">Ready to Orchestrate?</h4>
+                <p class="text-muted mb-4 px-5">Select a project and team members on the left to generate an automated, optimized workflow with smart assignments.</p>
+                <div class="d-flex gap-3 small text-muted">
+                    <span><i class="bi bi-check2-circle text-success me-1"></i> Smart Distribution</span>
+                    <span><i class="bi bi-check2-circle text-success me-1"></i> Skill Matching</span>
+                    <span><i class="bi bi-check2-circle text-success me-1"></i> Dynamic Deadlines</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadingState" class="card border-0 shadow-sm h-100 d-none tf-glass">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center py-5 text-center">
+                <div class="spinner-ai mb-4"></div>
+                <h4 class="fw-bold">Generating Intelligence...</h4>
+                <p class="text-muted mb-0">Llama-3 is analyzing project complexity and team velocity.</p>
+                <div id="loadingStep" class="text-primary small mt-3 fw-medium">Breaking down tasks...</div>
+            </div>
+        </div>
+
+        <div id="resultsState" class="card border-0 shadow-sm d-none">
+            <div class="card-header bg-white p-4 border-bottom d-flex align-items-center justify-content-between">
+                <h5 class="mb-0 fw-bold">AI Proposed Roadmap</h5>
+                <div class="d-flex gap-2">
+                    <button id="regenerateBtn" class="btn btn-light btn-sm border tf-pill"><i class="bi bi-arrow-clockwise me-1"></i> Retry</button>
+                    <button id="saveBtn" class="btn btn-primary btn-sm px-4 tf-pill">Confirm & Create Tasks</button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Task Proposition</th>
+                                <th>Assignment</th>
+                                <th>Priority</th>
+                                <th>Timeline</th>
+                                <th class="text-end pe-4">Operation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskProposalTable">
+                            <!-- Tasks injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentTasks = [];
+
+document.getElementById('generateBtn').addEventListener('click', async function() {
+    const projectId = document.getElementById('projectSelect').value;
+    const deadline = document.getElementById('deadlineInput').value;
+    const selectedUsers = Array.from(document.querySelectorAll('.team-member-check input:checked')).map(cb => parseInt(cb.value));
+
+    if (!projectId || !deadline || selectedUsers.length === 0) {
+        alert('Please select project, deadline, and at least one team member.');
+        return;
+    }
+
+    // Switch states
+    document.getElementById('welcomeState').classList.add('d-none');
+    document.getElementById('resultsState').classList.add('d-none');
+    document.getElementById('loadingState').classList.remove('d-none');
+
+    try {
+        const response = await fetch('{{ url_for("ai_planning.generate_plan") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project_id: projectId,
+                deadline: deadline,
+                user_ids: selectedUsers
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            alert(data.error);
+            document.getElementById('loadingState').classList.add('d-none');
+            document.getElementById('welcomeState').classList.remove('d-none');
+            return;
+        }
+
+        currentTasks = data.tasks;
+        renderTasks();
+
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('resultsState').classList.remove('d-none');
+
+    } catch (e) {
+        console.error(e);
+        alert('An unexpected error occurred during AI generation.');
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('welcomeState').classList.remove('d-none');
+    }
+});
+
+function renderTasks() {
+    const tbody = document.getElementById('taskProposalTable');
+    tbody.innerHTML = '';
+
+    currentTasks.forEach((task, index) => {
+        const tr = document.createElement('tr');
+        
+        // Find user name
+        const userCheckbox = document.querySelector(`.team-member-check input[value="${task.assigned_to}"]`);
+        const userName = userCheckbox ? userCheckbox.dataset.name : 'Unknown';
+
+        const pColor = task.priority === 'High' ? 'danger' : (task.priority === 'Medium' ? 'warning' : 'success');
+
+        tr.innerHTML = `
+            <td class="ps-4">
+                <div class="fw-bold small mb-1">${task.title}</div>
+                <div class="text-muted x-small text-truncate" style="max-width: 200px;">${task.description}</div>
+            </td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-initials sm me-2" style="width: 24px; height: 24px; font-size: 10px;">${userName[0]}</div>
+                    <span class="small fw-medium">${userName}</span>
+                </div>
+            </td>
+            <td>
+                <span class="badge badge-soft-${pColor} x-small">${task.priority}</span>
+            </td>
+            <td>
+                <div class="small fw-bold text-dark">${task.due_date}</div>
+                <div class="text-muted x-small">${task.estimate_hours}h estimated</div>
+            </td>
+            <td class="text-end pe-4">
+                <button class="btn btn-light btn-sm rounded-circle" onclick="removeTask(${index})"><i class="bi bi-x"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function removeTask(index) {
+    currentTasks.splice(index, 1);
+    renderTasks();
+    if (currentTasks.length === 0) {
+        document.getElementById('resultsState').classList.add('d-none');
+        document.getElementById('welcomeState').classList.remove('d-none');
+    }
+}
+
+document.getElementById('saveBtn').addEventListener('click', async function() {
+    const projectId = document.getElementById('projectSelect').value;
+    
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+    try {
+        const response = await fetch('{{ url_for("ai_planning.save_plan") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project_id: projectId,
+                tasks: currentTasks
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            window.location.href = '{{ url_for("task.tasks") }}';
+        } else {
+            alert(data.error);
+            this.disabled = false;
+            this.innerHTML = 'Confirm & Create Tasks';
+        }
+    } catch (e) {
+        alert('Failed to save tasks.');
+        this.disabled = false;
+        this.innerHTML = 'Confirm & Create Tasks';
+    }
+});
+
+document.getElementById('regenerateBtn').addEventListener('click', () => {
+    document.getElementById('generateBtn').click();
+});
+</script>
+{% endblock %}
