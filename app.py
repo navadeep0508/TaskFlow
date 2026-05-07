@@ -147,11 +147,14 @@ def inject_notification_count():
     return {"unread_notifications_count": unread_count}
 
 
+# Initialize admin user and permissions (with error handling)
 with app.app_context():
-    # Create all tables if they don't exist
-    db.create_all()
-    _ensure_admin_user()
-    _ensure_role_permissions()
+    try:
+        _ensure_admin_user()
+        _ensure_role_permissions()
+    except Exception as e:
+        print(f"Warning: Could not initialize admin user/permissions: {e}")
+        print("This may resolve on next request once database is fully ready.")
 
 
 @app.route('/test')
