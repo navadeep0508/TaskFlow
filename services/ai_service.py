@@ -66,7 +66,7 @@ class AIService:
         try:
             # Use OpenRouter to generate the plan
             chat_completion = self.client.chat.completions.create(
-                model="baidu/cobuddy:free",
+                model="openrouter/free",
                 messages=[
                     {"role": "system", "content": "You are a professional project manager AI. Always respond with valid JSON only."},
                     {"role": "user", "content": prompt}
