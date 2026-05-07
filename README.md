@@ -76,7 +76,7 @@ It ships with a clean UI (Bootstrap 5), a real dashboard, in-app notifications, 
 ### Setup
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/navadeep0508/TaskFlow.git
 cd taskflow
 python -m venv venv
 ```
