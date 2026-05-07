@@ -192,14 +192,28 @@ Endpoints:
 
 ## AI Project Planning
 
-TaskFlow includes an admin-only AI planning screen:
+TaskFlow includes an admin-only AI planning screen that leverages artificial intelligence to streamline project setup:
 
-- `/admin/ai-planning` (see [routes/ai_planning.py](routes/ai_planning.py#L12))
+- **Route**: `/admin/ai-planning` (see [routes/ai_planning.py](routes/ai_planning.py#L12))
+- **How it works**:
+  1. Enter a project description or goal
+  2. AI analyzes the requirements and breaks down the project into actionable tasks
+  3. Each task includes suggested priority, estimated time, and dependencies
+  4. Review and edit the generated tasks before creating the project
+  5. One-click project creation with all tasks pre-populated
 
-It requires:
+### Requirements
 
 - `OPENROUTER_API_KEY` in `.env` (see [services/ai_service.py](services/ai_service.py#L6-L25))
 - The `project.manage` permission
+- Active internet connection for AI API calls
+
+### Use Cases
+
+- **New Projects**: Quickly bootstrap new projects with comprehensive task lists
+- **Complex Initiatives**: Break down large, ambiguous projects into manageable tasks
+- **Planning Efficiency**: Save hours of manual planning with AI-generated task breakdowns
+- **Best Practices**: AI suggests industry-standard task structures and workflows
 
 ## Migrations
 
@@ -232,6 +246,15 @@ Minimum production env vars:
 - `SECRET_KEY` (required)
 - `DATABASE_URL` (recommended; defaults to local SQLite if not provided)
 
+## Troubleshooting
+
+- Login loops back to `/login`: ensure `SECRET_KEY` is set and cookies are enabled.
+- Using Supabase Postgres: TaskFlow auto-adds `sslmode=require` when host ends with `.supabase.co` (see [_normalize_database_url](app.py#L25-L33)).
+- AI planning shows an error: add `OPENROUTER_API_KEY` and restart the server.
+
+---
+
+Made for building calm, consistent team delivery.
 ## Troubleshooting
 
 - Login loops back to `/login`: ensure `SECRET_KEY` is set and cookies are enabled.
