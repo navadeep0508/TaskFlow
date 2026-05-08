@@ -78,7 +78,9 @@ Rules:
 """
 
         try:
+            print(f"DEBUG: Generating content with prompt: {prompt[:100]}...")
             response = self.client.generate_content(prompt)
+            print(f"DEBUG: Gemini raw response: {response.text[:200]}...")
             response_text = response.text.strip()
 
             # Remove markdown formatting
