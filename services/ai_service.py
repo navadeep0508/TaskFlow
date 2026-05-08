@@ -6,6 +6,7 @@ class AIService:
 
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
+        print(f"DEBUG: AIService initialized. API Key found: {'Yes' if self.api_key else 'No'}")
         self.model = "gemini-2.5-flash"
 
         if not self.api_key:
@@ -80,15 +81,24 @@ Rules:
         try:
             print(f"DEBUG: Generating content with prompt: {prompt[:100]}...")
             response = self.client.generate_content(prompt)
-            print(f"DEBUG: Gemini raw response: {response.text[:200]}...")
-            response_text = response.text.strip()
+            
+            if not response or not response.text:
+                print("DEBUG: Gemini returned an empty response.")
+                return {"error": "AI returned an empty response. Please try again."}
 
-            # Remove markdown formatting
-            response_text = response_text.replace(
-                "```json", ""
-            ).replace(
-                "```", ""
-            ).strip()
+            response_text = response.text.strip()
+            print(f"DEBUG: Gemini raw response: {response_text[:200]}...")
+
+            # More robust markdown removal
+            if "```" in response_text:
+                # Find content between ```json and ``` or just between ``` and ```
+                import re
+                json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response_text, re.DOTALL)
+                if json_match:
+                    response_text = json_match.group(1)
+                else:
+                    # Fallback: remove all backticks and 'json' identifiers
+                    response_text = response_text.replace("```json", "").replace("```", "").strip()
 
             data = json.loads(response_text)
 
