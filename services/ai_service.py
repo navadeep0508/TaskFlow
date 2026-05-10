@@ -5,15 +5,20 @@ from groq import Groq
 class AIService:
 
     def __init__(self):
-        self.api_key = "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"
+        self.api_key = os.getenv("GROQ_API_KEY")
         self.model = os.getenv("GROQ_MODEL") or "llama-3.3-70b-versatile"
-        print(f"DEBUG: AIService initialized. API Key found: {'Yes' if self.api_key else 'No'}")
-
+        
         if not self.api_key:
+            print("ERROR: GROQ_API_KEY not found in environment variables!")
             self.client = None
             return
 
-        self.client = Groq(api_key=self.api_key)
+        try:
+            self.client = Groq(api_key=self.api_key)
+            print("DEBUG: Groq client initialized successfully.")
+        except Exception as e:
+            print(f"ERROR: Failed to initialize Groq client: {e}")
+            self.client = None
 
     def generate_project_plan(
         self,
