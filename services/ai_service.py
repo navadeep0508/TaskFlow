@@ -5,7 +5,7 @@ from groq import Groq
 class AIService:
 
     def __init__(self):
-        self.api_key = os.getenv("GROQ_API_KEY")
+        self.api_key = "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"
         self.model = os.getenv("GROQ_MODEL") or "llama-3.3-70b-versatile"
         print(f"DEBUG: AIService initialized. API Key found: {'Yes' if self.api_key else 'No'}")
 
